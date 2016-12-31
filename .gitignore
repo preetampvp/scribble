@@ -1,0 +1,4 @@
+node_modules
+*.swp
+Scribbles-*
+.DS_Store
