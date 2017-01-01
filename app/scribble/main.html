@@ -4,7 +4,23 @@
     <link rel="stylesheet" href="./scribble.css" type="text/css" charset="utf-8">
   </head>
   <body>
-    <div class="app-name"><span class="app-name-text">Scribble</span> <input type="range" /></div>
+    <div class="toolbox">
+      <div id="toolbox">
+        <div id="thickness-value" class="thickness-value">5</div>
+        <div class="thickness-range">
+          <input type="range" min="1" max="10" id="thickness-range" /> 
+        </div>
+        <div id="color-container" class="color-container">
+          <div data-color="black" class="color selected"></div>
+          <div data-color="red" class="color"></div>
+          <div data-color="blue" class="color"></div>
+          <div data-color="yellow" class="color"></div>
+          <div data-color="green" class="color"></div>
+          <div data-color="pink" class="color"></div>
+        </div>
+      </div>
+      <div><a class="title" href="javascript:;" id="scribble">Scribble</a></div>
+    </div>
     <canvas id="canvas" class="canvas"></canvas>
     <script src="./scribble.js" type="text/javascript"></script>
   </body>

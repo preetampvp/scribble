@@ -2,19 +2,18 @@
 
 let scribble = (function (window) {
   let { ipcRenderer } = require("electron")
-  let canvas,
-  container,
-  context,
-  canvasWidth,
-  canvasHeight,
+  let canvas, container, context, canvasWidth, canvasHeight,
   curX = 0, curY = 0, prevX = 0, prevY = 0,
   flag = false, dot_flag = false,
-  foreColor = "red", thickness = 2,
+  color = "black", thickness = 2,
+  thicknessElem, thicknessRangeElem, scribbleElem,
+  toolboxElem,
   document = window.document;
 
   function init() {
     initCanvas();
     initIpc()
+    ipcRenderer.send("get-toolbox-config")
   }
 
   function initIpc() {
@@ -24,6 +23,12 @@ let scribble = (function (window) {
         ipcRenderer.send("clear-done")
       }
     }) 
+
+    ipcRenderer.on("toolbox-config", (e, config) => { 
+      console.log(config)
+      color = config.color; thickness = config.thickness 
+      initToolbox()
+    })
   }
 
   function initCanvas() {
@@ -38,6 +43,59 @@ let scribble = (function (window) {
     canvas.addEventListener('mouseout', (e) => findxy(e), false);
   }
 
+  function initToolbox() {
+    scribbleElem = document.getElementById("scribble")
+    thicknessElem = document.getElementById("thickness-value")
+    thicknessRangeElem = document.getElementById("thickness-range")
+    toolboxElem = document.getElementById("toolbox")
+    let colorElems = document.getElementsByClassName("color")
+
+    /* scribble */
+    scribbleElem.addEventListener('click', () => {
+      let currentState = toolboxElem.getAttribute("class") 
+      if(currentState && currentState === "hidden") {
+        toolboxElem.setAttribute("class", "")
+      } else {
+        toolboxElem.setAttribute("class", "hidden")
+      }
+    })
+
+    /* thickness */
+    thicknessElem.innerHTML = thickness
+    thicknessRangeElem.value = thickness
+
+    thicknessRangeElem.addEventListener('change', (e) => {
+      thickness = e.target.value
+      thicknessElem.innerHTML = thickness
+      ipcRenderer.send("toolbox-changed", {color, thickness})
+      //toolboxElem.setAttribute("class", "hidden")
+    })
+
+    /* color */
+    for(let elem of colorElems) {
+      let dataColor = elem.getAttribute("data-color")
+      elem.style.backgroundColor = dataColor
+      elem.addEventListener('click', () => { colorPicked(elem) })
+      if(dataColor === color) {
+        elem.setAttribute("class", "color selected")
+      } else {
+        elem.setAttribute("class", "color")
+      }
+    }
+    toolboxElem.setAttribute("class", "hidden")
+  }
+
+  function colorPicked(elem) {
+    color = elem.getAttribute("data-color")
+    let colorElems = document.getElementsByClassName("color")
+    for(let elem of colorElems) {
+      elem.setAttribute("class", "color")
+    }
+    elem.setAttribute("class", "color selected")
+    ipcRenderer.send("toolbox-changed", {color, thickness})
+    toolboxElem.setAttribute("class", "hidden")
+  }
+
   function findxy(e) {
     let type = e.type;
     if(type === 'mousedown') {
@@ -48,8 +106,8 @@ let scribble = (function (window) {
       flag = true; dot_flag = true;
       if(dot_flag) {
         context.beginPath();
-        context.fillStyle = foreColor;
-        context.fillRect(curX, curY, 2, 2);
+        context.fillStyle = color;
+        context.fillRect(curX, curY, thickness, thickness);
         context.closePath();
         dot_flag = false;
       }
@@ -69,7 +127,7 @@ let scribble = (function (window) {
     context.beginPath();
     context.moveTo(prevX, prevY);
     context.lineTo(curX, curY);
-    context.strokeStyle = foreColor;
+    context.strokeStyle = color;
     context.lineWidth = thickness;
     context.stroke();
     context.closePath();

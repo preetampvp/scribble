@@ -4,6 +4,7 @@ var main = (function() {
   const electron = require("electron");
   const { app, globalShortcut, BrowserWindow, ipcMain, Tray, Menu } = require("electron");
   const notifier = require("node-notifier");
+  const fs = require("fs")
 
   let tray = null,
   screen = null,
@@ -17,6 +18,21 @@ var main = (function() {
 
   function initIpc() {
     ipcMain.on('clear-done', () => { toggleScribbleWindowHide(), toggleScribbleWindowHide() });
+    ipcMain.on('toolbox-changed', (e, config) => { saveToolboxChanges(config) })
+    ipcMain.on('get-toolbox-config', (e) => {
+      let config = JSON.parse(fs.readFileSync(`${__dirname}/scribble.config`, 'utf8'))
+      e.sender.send('toolbox-config', config) 
+    })
+  }
+
+  function saveToolboxChanges(config) {
+    fs.writeFile(`${__dirname}/scribble.config`, JSON.stringify(config), (err) => {
+      if(err) {
+        notify(err.message)
+      } else {
+        if(process.env.debug) notify("saved")
+      }
+    })
   }
 
   function setupTray() {
